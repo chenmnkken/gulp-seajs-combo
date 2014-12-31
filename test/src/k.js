@@ -1,0 +1,1 @@
+seajs.use( 'test/src/l' );
