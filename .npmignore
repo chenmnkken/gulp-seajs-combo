@@ -3,3 +3,4 @@ node_modules
 .swap
 .orig
 .log
+test/gulpfile.js
