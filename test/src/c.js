@@ -1,6 +1,6 @@
 define(function( require, exports, module ){
-    var d = require( 'd' ),
-        e = require( 'e' );
+    var d = require( 'd' );
+require( 'e' );
 
-    module.exports = d + ' ' + e; 
+    module.exports = d; 
 });

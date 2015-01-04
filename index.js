@@ -1,7 +1,7 @@
 /*
  * seajs(CMD) Module combo pulgin for gulp
  * Author : chenmnkken@gmail.com
- * Date : 2014-12-29
+ * Date : 2015-01-04
  */
 
 var fs = require( 'fs' ),
@@ -10,6 +10,7 @@ var fs = require( 'fs' ),
     gutil = require( 'gulp-util' ),
     PluginError = gutil.PluginError,
 
+    rFirstStr = /[\s\r\n\=]/,
     rDefine = /define\(\s*(['"](.+?)['"],)?/,
     rDeps = /(['"])(.+?)\1/g,
     rAlias = /alias\s*\:([^\}]+)\}/,
@@ -187,11 +188,13 @@ var createIgnore = function( options ){
                 if( $2 && $2.slice(0, 4) !== 'http' ){
                     firstStr = result.charAt( 0 );
 
-                    if( firstStr === ' ' || firstStr === '=' ){
-                        deps.push( $2 );
-                        depModName = $2.match( rModId )[1];
-                        depModNames.push( depModName );
-                        result = firstStr + "require('" + depModName + "')";
+                    deps.push( $2 );
+                    depModName = $2.match( rModId )[1];
+                    depModNames.push( depModName );
+                    result = "require('" + depModName + "')";
+
+                    if( rFirstStr.test(firstStr) ){                        
+                        result = firstStr + result;
                     }
                 }
 
