@@ -1,5 +1,7 @@
 var gulp = require( 'gulp' ),
-    seajsCombo = require( '../index' );
+    seajsCombo = require( '../index' ),
+    handlebars = require( 'gulp-handlebars' ),
+    wrap = require( 'gulp-wrap' );
 
 gulp.task( 'a', function(){
     return gulp.src( './src/a.js' )
@@ -37,6 +39,18 @@ gulp.task( 'm', function(){
         .pipe( gulp.dest('./build') );
 });
 
+gulp.task( 'q', function(){
+    return gulp.src( './src/q.js' )
+        .pipe( seajsCombo({
+            plugins : [{
+                ext : [ '.tpl' ],
+                use : [
+                    handlebars(),
+                    wrap('define(function(){return Handlebars.template(<%= contents %>)});')
+                ]
+            }]
+        }))
+        .pipe( gulp.dest('./build') );
+});
 
-
-gulp.task( 'default', ['a', 'c', 'f', 'k', 'm'] );
+gulp.task( 'default', ['a', 'c', 'f', 'k', 'm', 'q'] );

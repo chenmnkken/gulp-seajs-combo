@@ -3,6 +3,8 @@ var fs = require( 'fs' ),
     should = require( 'should' ),
     gutil = require( 'gulp-util' ),
     assert = require( 'stream-assert' ),
+    handlebars = require( 'gulp-handlebars' ),
+    wrap = require( 'gulp-wrap' ),
     seajsCombo = require( '../index' );
 
 describe( 'gulp-seajs-combo', function(){
@@ -62,6 +64,26 @@ describe( 'gulp-seajs-combo', function(){
                     map : { 
                         'test/src/l' : './l'
                     }
+                }))
+                .pipe( assert.first(function( data ){
+                    data.contents.toString().should.equal( moduleK ); 
+                }))
+                .pipe( assert.end(done) );
+        });
+
+        // 测试options.plugins
+        it( 'should use plugins for handlebars tpl', function( done ){
+            var moduleK = fs.readFileSync( './build/q.js', 'utf-8' );
+
+            gulp.src( 'src/q.js' )
+                .pipe( seajsCombo({
+                    plugins : [{
+                        ext : [ '.tpl' ],
+                        use : [
+                            handlebars(),
+                            wrap('define(function(){return Handlebars.template(<%= contents %>)});')
+                        ]
+                    }]
                 }))
                 .pipe( assert.first(function( data ){
                     data.contents.toString().should.equal( moduleK ); 

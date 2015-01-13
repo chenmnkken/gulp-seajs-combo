@@ -58,6 +58,24 @@ map : {
 }
 ```
 
+#### plugins
+
+`plugins` for special module. A module need combo Handlebars tpl module, but tpl will compile before combo.
+
+```
+var handlebars = require( 'gulp-handlebars' ),
+      wrap = require( 'gulp-wrap' );
+      
+...
+plugins : [{
+    ext : [ '.tpl' ],
+    use : [
+        handlebars(),
+        wrap('define(function(){return Handlebars.template(<%= contents %>)});')
+    ]
+}]
+```
+
 ## Combo rule
 
 Module `a.js` :

@@ -1,13 +1,14 @@
 /*
  * seajs(CMD) Module combo pulgin for gulp
  * Author : chenmnkken@gmail.com
- * Date : 2015-01-04
+ * Date : 2015-01-13
  */
 
 var fs = require( 'fs' ),
     path = require( 'path' ),
     through = require( 'through2' ),
     gutil = require( 'gulp-util' ),
+    execPlugins = require( './lib/execplugins' ),
     PluginError = gutil.PluginError,
 
     rFirstStr = /[\s\r\n\=]/,
@@ -18,9 +19,9 @@ var fs = require( 'fs' ),
     rVars = /vars\s*\:([^\}]+)\}/,
     rVar = /\{([^{]+)}/g,
     rSeajsConfig = /seajs\.config\([^\)]+\);?/g,
-    rModId = /([^\\\/?]+?)(\.(?:js|css))?(\?.*)?$/,
+    rModId = /([^\\\/?]+?)(\.(?:js))?([\?#].*)?$/,
+    rQueryHash = /[\?#].*$/,
     rExistId = /define\(\s*['"][^\[\('"\{\r\n]+['"]\s*,?/,
-
     rSeajsUse = /"(?:\\"|[^"])*"|'(?:\\'|[^'])*'|\/\*[\S\s]*?\*\/|\/(?:\\\/|[^\/\r\n])+\/(?=[^\/])|\/\/.*|\.\s*seajs\.use|(?:^|[^$])\bseajs\.use\s*\((.+)/g,
 
     rRequire = /"(?:\\"|[^"])*"|'(?:\\'|[^'])*'|\/\*[\S\s]*?\*\/|\/(?:\\\/|[^\/\r\n])+\/(?=[^\/])|\/\/.*|\.\s*require|(?:^|[^$])\brequire\s*\(\s*(["'])(.+?)\1\s*\)/g;
@@ -42,6 +43,23 @@ var createIgnore = function( options ){
         }
 
         return obj;
+    },
+
+    /*
+     * 初始化插件
+     * param { Object } 老配置对象
+     * param { Object } 新忽略列表
+     */
+    initPlugins = function( options, o ){
+        var name;
+
+        o.plugins = {};
+
+        options.plugins.forEach(function( item ){
+            item.ext.forEach(function( name ){
+                o.plugins[ name ] = item.use;
+            });
+        });
     },
 
     /*
@@ -165,88 +183,120 @@ var createIgnore = function( options ){
     },
 
     /*
+     * 解析模块标识
+     * param { String } 模块标识
+     * return { Object } filePath : 过滤query和hash后的模块标识, modName : 模块名, extName : 模块后缀
+     */
+    modResolve = function( filePath ){
+        // 过滤query(?)和hash(#)
+        filePath = filePath.replace( rQueryHash, '' );
+
+        var modName = filePath.match( rModId )[1],    
+            extName = path.extname( filePath );
+
+        if( extName ){
+            modName = modName.replace( extName, '' );
+        }
+
+        return {
+            filePath : filePath,
+            modName : modName,
+            extName : extName
+        };
+    },
+
+    /*
      * 格式化模块后合并内容
      * param { Object } 数据存储对象
      * param { String } 文件内容
      * param { String } 模块的绝对路径
+     * param { Boolean } 是否为特殊模块
      * return { Array } 依赖模块的相对路径列表
      */
-    comboContent = function( options, content, filePath ){
+    comboContent = function( options, content, filePath, isSpecial ){
         var isSeajsUse = !!~content.indexOf( 'seajs.use(' ),
-            modName = filePath.match( rModId )[1],
+            modResult = modResolve( filePath ),
+            modName = modResult.modName,
             depModNames = [],
             deps = [],
             defineStr, result, name;
 
-        // 标准模块
-        if( !isSeajsUse ){
-            // require( '../js/a' ) => require( 'a' )
-            content = content.replace( rRequire, function( $, _, $2 ){
-                var result = $,
-                    depModName, firstStr;
+        filePath = modResult.filePath;
 
-                if( $2 && $2.slice(0, 4) !== 'http' ){
-                    firstStr = result.charAt( 0 );
+        if( !isSpecial ){
+            // 标准模块
+            if( !isSeajsUse ){
+                // require( '../js/a' ) => require( 'a' )
+                content = content.replace( rRequire, function( $, _, $2 ){
+                    var result = $,
+                        depModResult, depModName, firstStr;
 
-                    deps.push( $2 );
-                    depModName = $2.match( rModId )[1];
-                    depModNames.push( depModName );
-                    result = "require('" + depModName + "')";
+                    if( $2 && $2.slice(0, 4) !== 'http' ){
+                        depModResult = modResolve( $2 );
+                        depModName = depModResult.modName;
+                        firstStr = result.charAt( 0 );
 
-                    if( rFirstStr.test(firstStr) ){                        
-                        result = firstStr + result;
-                    }
-                }
+                        deps.push( depModResult.filePath );
+                        depModNames.push( depModName );
+                        result = "require('" + depModName + "')";
 
-                return result;
-            });
-
-            // 为匿名模块添加模块名，同时将依赖列表添加到头部
-            content = content.replace( rDefine, function( $, $1 ){
-                return deps.length ?
-                    "define('" + modName + "',['" + depModNames.join("','") + "']," :
-                    "define('" + modName + "',";
-            });
-        }
-        // 解析seajs.use
-        else{
-            result = parseConfig( content );
-            content = result.content;
-            
-            for( name in result.config ){
-                options.config[ name ] = result.config[ name ];
-            }
-
-            // seajs.use( '../js/b' ) => seajs.use( 'b' )
-            content = content.replace( rSeajsUse, function( $ ){
-                var result = $;
-
-                if( ~$.indexOf('seajs.use(') ){
-                    result = $.replace( rDeps, function( $, _, $2 ){
-                        var _result = $,
-                            depModName;
-
-                        if( $2 && $2.slice(0, 4) !== 'http' ){
-                            deps.push( $2 );
-                            depModName = $2.match( rModId )[1];
-                            _result = "'" + depModName + "'";
+                        if( rFirstStr.test(firstStr) ){                        
+                            result = firstStr + result;
                         }
+                    }
 
-                        return _result;
-                    });
+                    return result;
+                });
+
+                // 为匿名模块添加模块名，同时将依赖列表添加到头部
+                content = content.replace( rDefine, function( $, $1 ){
+                    return deps.length ?
+                        "define('" + modName + "',['" + depModNames.join("','") + "']," :
+                        "define('" + modName + "',";
+                });
+            }
+            // 解析seajs.use
+            else{
+                result = parseConfig( content );
+                content = result.content;
+                
+                for( name in result.config ){
+                    options.config[ name ] = result.config[ name ];
                 }
 
-                return result;
-            });
-        }
+                // seajs.use( '../js/b' ) => seajs.use( 'b' )
+                content = content.replace( rSeajsUse, function( $ ){
+                    var result = $;
 
-        // 防止标准模块的重复合并
-        if( !isSeajsUse ){
-            if( options.unique[filePath] ){
-                return deps;
+                    if( ~$.indexOf('seajs.use(') ){
+                        result = $.replace( rDeps, function( $, _, $2 ){
+                            var _result = $,
+                                depModResult, depModName;
+
+                            if( $2 && $2.slice(0, 4) !== 'http' ){
+                                depModResult = modResolve( $2 );
+                                depModName = depModResult.modName;
+
+                                deps.push( depModResult.filePath );
+                                _result = "'" + depModName + "'";
+                            }
+
+                            return _result;
+                        });
+                    }
+
+                    return result;
+                });
             }
 
-            options.unique[ filePath ] = true;
+            // 防止标准模块的重复合并
+            if( !isSeajsUse ){
+                if( options.unique[filePath] ){
+                    return deps;
+                }
+
+                options.unique[ filePath ] = true;
+            }
         }
         
         // 合并
@@ -260,28 +310,57 @@ var createIgnore = function( options ){
     },
 
     /*
-     * 解析模块的依赖模块列表，如果有依赖模块则递归调用再次解析，直到所有的依赖模块都解析完
+     * 解析依赖模块列表，如果有依赖模块则开始解析依赖模块
      * param { Object } 数据存储对象
-     * param { String | Array } 文件内容 | 依赖模块列表
-     * param { String } 模块的绝对路径
-     * return { String } 合并和的文件内容
+     * param { Array } 依赖模块 
+     * param { Function } 回调函数
      */
-    formatDeps = function( options, content, filePath ){
-        var deps = [],
+    parseDeps = function( options, parentDeps, callback ){
+        var len = parentDeps.length,
             i = 0,
-            modName, basePath;
+            childDeps = [];
 
-        if( Array.isArray(content) ){
-            content.forEach(function( depPath ){
-                var depContent, _deps;
+        var complete = function(){
+            if( i === len ){
+                if( childDeps.length ){
+                    parseDeps( options, childDeps, callback );
+                }
+                else{
+                    callback();
+                }
+            }
+        };
 
-                modName = depPath.match( rModId )[1];
+        parentDeps.forEach(function( depPath ){
+            var result = modResolve( depPath ),
+                modName = result.modName,
+                extName = result.extName,
+                depContent, _deps, stream;
 
-                // 检测该模块是否在忽略列表中
-                if( !options.ignore[modName] ){
-                    if( !~depPath.indexOf('.js') ){
-                        depPath += '.js'
+            i++;
+            depPath = result.filePath;
+            
+            // 检测该模块是否在忽略列表中
+            if( !options.ignore[modName] ){
+                // 处理特殊的模块，如 tpl 模块（需额外的插件支持）
+                // 根据模块后缀来匹配是否使用插件
+                if( extName && !~extName.indexOf('.js') && options.plugins[extName] ){
+                    // 有插件则执行插件
+                    stream = execPlugins( depPath, options.plugins[extName] );
+                    stream.pipe( through.obj(function( file, enc, _callback ){
+                        comboContent( options, file.contents.toString(), depPath );
+                        _callback( null, file );
+                    }));
+
+                    if( i === len ){
+                        stream.on( 'end', function(){
+                            callback();
+                        });
                     }
+                }
+                // 处理普通的js模块
+                else{
+                    depPath += '.js'
 
                     try{
                         depContent = fs.readFileSync( depPath, options.encoding );
@@ -293,26 +372,44 @@ var createIgnore = function( options ){
                     _deps = comboContent( options, depContent, depPath );
 
                     if( _deps.length ){
-                        deps = deps.concat( _deps );
+                        childDeps = childDeps.concat( _deps );
                         basePath = path.resolve( depPath, '..' );
-                        deps = mergePath( options, deps, basePath );
+                        childDeps = mergePath( options, childDeps, basePath );
                     }
+
+                    complete();                
                 }
-            });
+            }
+            else{
+                complete();  
+            }
+        });
+    },
+
+    /*
+     * 解析模块的内容，如果有依赖模块则开始解析依赖模块
+     * param { Object } 数据存储对象
+     * param { String | Array } 文件内容 
+     * param { String } 模块的绝对路径
+     * param { Function } 回调函数
+     */
+    parseContent = function( options, content, filePath, callback ){
+        var result = modResolve( filePath ),
+            deps = [],
+            basePath;
+
+        // 检测该模块是否在忽略列表中
+        if( !options.ignore[result.modName] ){
+            deps = comboContent( options, content, result.filePath );
+            basePath = path.resolve( result.filePath, '..' );
+            deps = mergePath( options, deps, basePath );
+        }
+
+        if( deps.length ){
+            parseDeps( options, deps, callback );
         }
         else{
-            modName = filePath.match( rModId )[1];
-
-            // 检测该模块是否在忽略列表中
-            if( !options.ignore[modName] ){
-                deps = comboContent( options, content, filePath );
-                basePath = path.resolve( filePath, '..' );
-                deps = mergePath( options, deps, basePath );
-            }
-        }
-        
-        if( deps.length ){
-            formatDeps( options, deps );
+            callback();
         }
     },
 
@@ -336,6 +433,10 @@ var createIgnore = function( options ){
             if( options.encoding ){
                 o.encoding = options.encoding;
             }
+
+            if( options.plugins ){
+                initPlugins( options, o );
+            }
         }
 
         return through.obj(function( file, enc, callback ){
@@ -343,14 +444,20 @@ var createIgnore = function( options ){
 
             if( file.isBuffer() ){
                 contents = file.contents.toString();
-                formatDeps( o, contents, file.path );
-                file.contents = new Buffer( o.contents );
-                if( o.verbose ){
-                    gutil.log( 'gulp-seajs-combo:', gutil.colors.green('✔ Module [' + file.path + '] completed the combo of all dependencies.') );
-                }
-            }
 
-            callback( null, file );
+                parseContent( o, contents, file.path, function(){
+                    file.contents = new Buffer( o.contents );
+
+                    if( o.verbose ){
+                        gutil.log( 'gulp-seajs-combo:', gutil.colors.green('✔ Module [' + file.path + '] completed the combo of all dependencies.') );
+                    }
+
+                    callback( null, file );
+                });
+            }
+            else{
+                callback( null, file );
+            }
         });
     };
 
