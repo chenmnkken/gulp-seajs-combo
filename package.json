@@ -1,6 +1,6 @@
 {
   "name": "gulp-seajs-combo",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "seajs(CMD) Module combo pulgin for gulp",
   "homepage": "http://github.com/chenmnkken/gulp-seajs-combo",
   "author": {
@@ -26,6 +26,7 @@
     "glob-stream": "^4.0.0",
     "graceful-fs": "^3.0.5",
     "gulp-util": "3.0.0",
+    "q": "^1.1.2",
     "strip-bom": "^1.0.0",
     "through2": "0.6.0",
     "vinyl": "^0.4.6"

@@ -1,10 +1,11 @@
 /*
  * seajs(CMD) Module combo pulgin for gulp
  * Author : chenmnkken@gmail.com
- * Date : 2015-01-13
+ * Date : 2015-01-14
  */
 
-var fs = require( 'fs' ),
+var Q = require( 'q' ),
+    fs = require( 'fs' ),
     path = require( 'path' ),
     through = require( 'through2' ),
     gutil = require( 'gulp-util' ),
@@ -316,28 +317,15 @@ var createIgnore = function( options ){
      * param { Function } 回调函数
      */
     parseDeps = function( options, parentDeps, callback ){
-        var len = parentDeps.length,
-            i = 0,
-            childDeps = [];
+        var childDeps = [];
 
-        var complete = function(){
-            if( i === len ){
-                if( childDeps.length ){
-                    parseDeps( options, childDeps, callback );
-                }
-                else{
-                    callback();
-                }
-            }
-        };
-
-        parentDeps.forEach(function( depPath ){
-            var result = modResolve( depPath ),
+        promiseArr = parentDeps.map(function( depPath ){
+            var deferred = Q.defer(),
+                result = modResolve( depPath ),
                 modName = result.modName,
                 extName = result.extName,
                 depContent, _deps, stream;
 
-            i++;
             depPath = result.filePath;
             
             // 检测该模块是否在忽略列表中
@@ -352,11 +340,9 @@ var createIgnore = function( options ){
                         _callback( null, file );
                     }));
 
-                    if( i === len ){
-                        stream.on( 'end', function(){
-                            callback();
-                        });
-                    }
+                    stream.on( 'end', function(){
+                        deferred.resolve();
+                    });
                 }
                 // 处理普通的js模块
                 else{
@@ -377,11 +363,22 @@ var createIgnore = function( options ){
                         childDeps = mergePath( options, childDeps, basePath );
                     }
 
-                    complete();                
+                    deferred.resolve();           
                 }
             }
             else{
-                complete();  
+                deferred.resolve();
+            }
+
+            return deferred.promise;
+        });
+
+        Q.all( promiseArr ).then(function(){
+            if( childDeps.length ){
+                parseDeps( options, childDeps, callback );
+            }
+            else{
+                callback();
             }
         });
     },
