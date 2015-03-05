@@ -346,7 +346,9 @@ var createIgnore = function( options ){
                 }
                 // 处理普通的js模块
                 else{
-                    depPath += '.js'
+                    if( !extName ){                
+                        depPath += '.js'
+                    }
 
                     try{
                         depContent = fs.readFileSync( depPath, options.encoding );
