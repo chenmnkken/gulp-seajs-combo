@@ -1,7 +1,7 @@
 /*
  * seajs(CMD) Module combo pulgin for gulp
  * Author : chenmnkken@gmail.com
- * Date : 2015-01-14
+ * Date : 2015-03-09
  */
 
 var Q = require( 'q' ),
@@ -324,7 +324,7 @@ var createIgnore = function( options ){
                 result = modResolve( depPath ),
                 modName = result.modName,
                 extName = result.extName,
-                depContent, _deps, stream;
+                depContent, _deps, stream, plugins;
 
             depPath = result.filePath;
             
@@ -332,9 +332,18 @@ var createIgnore = function( options ){
             if( !options.ignore[modName] ){
                 // 处理特殊的模块，如 tpl 模块（需额外的插件支持）
                 // 根据模块后缀来匹配是否使用插件
-                if( extName && !~extName.indexOf('.js') && options.plugins[extName] ){
+                if( extName && !~extName.indexOf('.js') ){
+                    if( options.plugins && options.plugins[extName] ){
+                        plugins = options.plugins[extName];
+                        
+                        if( !plugins ){
+                            return;
+                        }
+                    }
+
                     // 有插件则执行插件
-                    stream = execPlugins( depPath, options.plugins[extName] );
+                    stream = execPlugins( depPath, plugins );
+                    
                     stream.pipe( through.obj(function( file, enc, _callback ){
                         comboContent( options, file.contents.toString(), depPath );
                         _callback( null, file );

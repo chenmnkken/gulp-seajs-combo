@@ -69,10 +69,12 @@ var handlebars = require( 'gulp-handlebars' ),
 ...
 plugins : [{
     ext : [ '.tpl' ],
-    use : [
-        handlebars(),
-        wrap('define(function(){return Handlebars.template(<%= contents %>)});')
-    ]
+    use : [{
+            plugin : handlebars, 
+        },{
+            plugin : wrap,
+            param : ['define(function(){return Handlebars.template(<%= contents %>)});']
+    }]
 }]
 ```
 

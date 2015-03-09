@@ -79,10 +79,12 @@ describe( 'gulp-seajs-combo', function(){
                 .pipe( seajsCombo({
                     plugins : [{
                         ext : [ '.tpl' ],
-                        use : [
-                            handlebars(),
-                            wrap('define(function(){return Handlebars.template(<%= contents %>)});')
-                        ]
+                        use : [{
+                                plugin : handlebars, 
+                            },{
+                                plugin : wrap,
+                                param : ['define(function(){return Handlebars.template(<%= contents %>)});']
+                        }]
                     }]
                 }))
                 .pipe( assert.first(function( data ){
