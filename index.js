@@ -181,7 +181,7 @@ var filterIgnore = function( ignore, id, origId ){
 
             // 处理seajs.config => paths
             if( config.paths ){
-                arr = origId.split( path.sep );
+                arr = origId.split( '/' );
                 modId = arr.splice( arr.length - 1, 1 );
 
                 arr.forEach(function( _item, i ){
@@ -191,7 +191,7 @@ var filterIgnore = function( ignore, id, origId ){
                 });
 
                 arr = arr.concat( modId );
-                origId = arr.join( path.sep );
+                origId = arr.join( '/' );
             }
 
             return {
@@ -219,14 +219,6 @@ var filterIgnore = function( ignore, id, origId ){
         if( extName && extName === '.js' ){
             id = id.replace( extName, '' );
         }
-
-        // // 防止有id重复，但是路径不一样的情况出现
-        // if( options.unique[id] ){
-        //     id = id + '_' + PLUGIN_NAME + '_' + options.uuid;
-        // }
-        // else{
-        //     options.unique[id] = true;
-        // }
 
         return {
             id : id,
@@ -365,7 +357,6 @@ var filterIgnore = function( ignore, id, origId ){
         var isSeajsUse = !!~contents.indexOf( 'seajs.use(' ),
             id = modData.id,
             deps = [],
-            // _deps = [],
             configResult, name, base, matches;
 
         // 标准模块
