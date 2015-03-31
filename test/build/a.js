@@ -3,5 +3,6 @@ define('b',function(){
 });
 define('a',['b'],function( require, exports, module ){
     var b = require('b');
-    module.exports = 'a' + ' ' + b; 
+    module.exports = 'a' + ' ' + b;
 });
+

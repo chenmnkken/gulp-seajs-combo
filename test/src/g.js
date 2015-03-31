@@ -1,4 +1,4 @@
-define(function(){
-    var j=require( 'j' );
+define(function(require){
+    var j=require( './j' );
     return 'g' + ' ' + j;
 });

@@ -2,14 +2,12 @@ seajs.config({
 
   // 别名配置
   alias: {
-    'i' : 'alias/i',
-    'jquery': foo + 'jquery/jquery/1.10.1/jquery'
+    'i' : 'alias/i'
   },
 
   // 路径配置
   paths: {
-    'foo': 'foo/bar/biz',
-    'hello' : hello + '/foo/bar/biz'
+    'foo': 'foo/bar/biz'
   },
 
   // 变量配置
@@ -32,7 +30,7 @@ seajs.config({
   debug: true,
 
   // Sea.js 的基础路径
-  base: 'http://example.com/path/to/base/',
+  base: 'src',
 
   // 文件编码
   charset: 'utf-8'
@@ -40,4 +38,7 @@ seajs.config({
 
 var hello = 'hello';
 
-seajs.use( ['{locale}/n', 'i', 'o'] );
+seajs.use( ['{locale}/n', 'i', 'o'], function(){
+    var args = Array.prototype.join.call( arguments, ', ' );
+    console.log( args + ' is done' );
+});

@@ -10,11 +10,8 @@ define('g',['j'],function(require){
     return 'g' + ' ' + j;
 });
 
-seajs.use( 'g', function( g ){
+seajs.use( ['g','h'], function( g, h ){
     console.log( g );
-});
-
-seajs.use( 'h', function( h ){
     console.log( h );
 });
 

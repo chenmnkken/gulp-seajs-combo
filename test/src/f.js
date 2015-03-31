@@ -1,7 +1,7 @@
-seajs.use( 'g', function( g ){
-    console.log( g ); 
+seajs.use( 'src/g', function( g ){
+    console.log( g );
 });
 
-seajs.use( 'h', function( h ){
-    console.log( h ); 
+seajs.use( 'src/h', function( h ){
+    console.log( h );
 });

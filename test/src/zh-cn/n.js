@@ -1,3 +1,3 @@
-define( 'n', function( require ){
+define(function(){
     return 'n';
 });
