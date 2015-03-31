@@ -250,6 +250,14 @@ var filterIgnore = function( ignore, id, origId ){
 
                 // 检测该模块是否在忽略列表中
                 if( isIgnore ){
+                    options.modArr.push({
+                        id : id,
+                        path : filePath,
+                        contents : '',
+                        extName : extName,
+                        origId : origId
+                    });
+
                     resolve();
                     return;
                 }
@@ -505,7 +513,9 @@ var filterIgnore = function( ignore, id, origId ){
 
         newModArr.forEach(function( item ){
             var newContents = transform( options, item, idMap );
-            contents = newContents + '\n' + contents;
+            if( newContents ){
+                contents = newContents + '\n' + contents;
+            }
 
             if( options.verbose ){
                 gutil.log( 'gulp-seajs-combo:', '✔ Module [' + filePath + '] combo success.' );

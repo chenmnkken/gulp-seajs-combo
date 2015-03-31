@@ -40,13 +40,23 @@ Default : `utf-8`
 
 Type : `Array`
 
-Ignored module list. e.g. combo module `main`, want ignore dependencies `global` and `common`, configuration ignore list : 
+Ignored module list. combo module `main`, need ignore dependencies `global` and `common`, configuration ignore list : 
 
 ```
 ignore : [ 'global', 'common' ]
 ```
 
-The ignore configuration must is name of the module. 
+Ignore configuration has two rules, if need ignore `src/a` and `src/test/a`:
+
+```
+ignore : [ 'a' ]
+```
+
+If `src/a` and `src/test/a` need ignore `src/test/a`
+
+```
+ignore : [ 'src/test/a' ]
+```
 
 #### map
 
@@ -105,7 +115,7 @@ gulp.src( 'src/a.js' )
     ...
 ```
 
-Combo after `a.js` :
+Combined `a.js` :
 
 ```
 define('b',function(){
@@ -131,7 +141,7 @@ gulp.src( 'src/main.js' )
     ...
 ```
 
-Combo after `main.js` :
+Combined `main.js` :
 
 ```
 define('b',function(){
@@ -143,6 +153,10 @@ define('a',['b'],function(){
 });
 seajs.use( 'a' );
 ```
+
+The combined module will keep none path id, `src/a` combined id is `a`, `foo/bar/p` combined id is `p`.
+
+If combined module id is duplicate, gulp-seajs-combo will modify original id. `src/a` and `src/test/a` combined id both is `a`, then gulp-seajs-combo will modify `src/test/a` id is `s_gulp_seajs_combo_xx`.
 
 ## Parse `seajs.config`
 
