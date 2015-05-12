@@ -1,7 +1,7 @@
 # gulp-seajs-combo
 
 ***
-> seajs(CMD) Module combo pulgin for gulp
+> seajs(CMD) Module combo pulgin for gulp [Chinese Docs](https://github.com/chenmnkken/gulp-seajs-combo/blob/master/README_CN.md)
 
 ## Install
 
