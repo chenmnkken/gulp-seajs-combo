@@ -160,8 +160,6 @@ seajs.use( 'a' );
 
 ## 解析 `seajs.config`
 
-`gulp-seajs-combo` will parse `alias` `vars` `paths` in `seajs.config`, other configuration is ignored, the configuration value must be a `String`, will ignored variable. see more [seajs.config](https://github.com/seajs/seajs/issues/262). [test/src/m.js](https://github.com/chenmnkken/gulp-seajs-combo/blob/master/test/src/m.js) and [test/build/m.js](https://github.com/chenmnkken/gulp-seajs-combo/blob/master/test/build/m.js) is parse example.
-
 `gulp-seajs-combo` 会解析 `seajs.config` 中的 `alias` `vars` `paths` 这 3 个配置，其他的配置会忽略，并且配置的值必须为 `String` 类型，会忽略其中的变量，查看更多的 [seajs.config](https://github.com/seajs/seajs/issues/262)。[test/src/m.js](https://github.com/chenmnkken/gulp-seajs-combo/blob/master/test/src/m.js) 和 [test/build/m.js](https://github.com/chenmnkken/gulp-seajs-combo/blob/master/test/build/m.js) 是合并时解析规则的例子。
 
 想深入了解 gulp-seajs-combo 可以查看[使用gulp-seajs-combo合并seajs模块](http://stylechen.com/gulp-seajs-combo.html)
